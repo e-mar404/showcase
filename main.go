@@ -19,6 +19,7 @@ type model struct {
   userName string
   introText string
   projectList []string
+	selectedProject int
 }
 
 func main() {
@@ -47,6 +48,7 @@ func initialModel(cfg config) model {
     userName: cfg.UserName,
     introText: cfg.IntroText,
     projectList: cfg.ProjectList,
+		selectedProject: 0,
 	}
 }
 
@@ -59,8 +61,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     case tea.KeyMsg:
         switch msg.String() {
         case "ctrl+c", "q":
-            return m, tea.Quit
+					return m, tea.Quit
 
+				case "k", "up":
+					if m.selectedProject > 0 {
+						m.selectedProject--
+					}
+
+				case "j":
+					if m.selectedProject < len(m.projectList)-1 {
+						m.selectedProject++
+					}
         }
     }
     return m, nil
@@ -70,7 +81,17 @@ func (m model) View() string {
   s := fmt.Sprintf("%v's Showcase\n\n", m.userName)
   s += fmt.Sprintf("%v\n\n", m.introText)
 
-  s += "press 'q' to quit."
+	for i, project := range m.projectList {
+		if m.selectedProject == i {
+			s += "> "
+		} else {
+			s += "- "
+		}
+		s += fmt.Sprintf("%v\n", project)
+	}
+
+  s += "\npress 'q' to quit."
 
   return s 
+
 }
