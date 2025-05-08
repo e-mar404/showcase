@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -12,14 +14,19 @@ import (
 type config struct {
 	UserName string `json:"user_name"`
 	IntroText string `json:"intro_text"`
-	ProjectList []string `json:"project_list"`
+	ProjectList []project `json:"project_list"`
 }
 
 type model struct {
   userName string
   introText string
-  projectList []string
+  projectList []project
 	selectedProject int
+}
+
+type project struct {
+	Name string `json:"name"`
+	Url string `json:"url"`
 }
 
 func main() {
@@ -60,6 +67,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
         switch msg.String() {
+				case "enter":
+					open(m.projectList[m.selectedProject].Url)
+
         case "ctrl+c", "q":
 					return m, tea.Quit
 
@@ -87,7 +97,7 @@ func (m model) View() string {
 		} else {
 			s += "- "
 		}
-		s += fmt.Sprintf("%v\n", project)
+		s += fmt.Sprintf("%v\n", project.Name)
 	}
 
   s += "\npress 'q' to quit."
@@ -95,3 +105,22 @@ func (m model) View() string {
   return s 
 
 }
+
+func open(url string) error {
+	var cmd string
+	var args []string
+
+		switch runtime.GOOS{
+		case "windows":
+			cmd = "cmd"
+			args = []string{"/c", "start"}
+		case "darwin":
+			cmd = "open"
+		default:
+			cmd = "xdg-open"
+		}
+
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
+}
+

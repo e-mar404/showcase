@@ -2,8 +2,17 @@
   "user_name": "e-mar404",
   "intro_text": "Welcome everyone please give a try to my following projects",
   "project_list": [
-    "https://github.com/e-mar404/tooltip.nvim",
-    "proj 2",
-    "proj 3"
+    {
+      "name": "Pokedex Cli",
+      "url": "https://github.com/e-mar404/pokedex"
+    },
+    {
+      "name": "Gator",
+      "url": "https://github.com/e-mar404/blog-aggrtegator"
+    },
+    {
+      "name": "Chirpy Api",
+      "url": "https://github.com/e-mar404/http-server"
+    }
   ]
 }
