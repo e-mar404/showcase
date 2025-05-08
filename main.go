@@ -15,43 +15,62 @@ type config struct {
 	ProjectList []string `json:"project_list"`
 }
 
-type homeModel struct {
-	userName string
-	introText string
-	projectList []string
+type model struct {
+  userName string
+  introText string
+  projectList []string
 }
 
 func main() {
 	file, err := os.Open(".showcase.json")
 	if err != nil {
 		log.Fatal(err)
+    os.Exit(1)
 	}
 
 	decoder := json.NewDecoder(file)
-	var config config
-	if err = decoder.Decode(&config); err != nil {
+	var cfg config
+	if err = decoder.Decode(&cfg); err != nil {
 		log.Fatal(err)
+    os.Exit(1)
 	}
-	fmt.Println(config)
+
+  p := tea.NewProgram(initialModel(cfg))
+  if _, err = p.Run(); err != nil {
+		log.Fatal(err)
+    os.Exit(1)
+  }
 }
 
-func homeModelFromConfig(cfg config) homeModel {
-	return homeModel {
-		userName: cfg.UserName,
-		introText: cfg.IntroText,
-		projectList: cfg.ProjectList,
+func initialModel(cfg config) model {
+	return model{
+    userName: cfg.UserName,
+    introText: cfg.IntroText,
+    projectList: cfg.ProjectList,
 	}
 }
 
-func (hm homeModel) Init() tea.Cmd {
-	return nil
+func (m model) Init() tea.Cmd {
+    return nil
 }
 
-func (hm homeModel) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
-	return nil, nil
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+c", "q":
+            return m, tea.Quit
+
+        }
+    }
+    return m, nil
 }
 
-func (hm homeModel) View() string {
-	return ""
-}
+func (m model) View() string {
+  s := fmt.Sprintf("%v's Showcase\n\n", m.userName)
+  s += fmt.Sprintf("%v\n\n", m.introText)
 
+  s += "press 'q' to quit."
+
+  return s 
+}
