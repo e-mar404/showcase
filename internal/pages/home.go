@@ -7,6 +7,13 @@ import (
 	"github.com/e-mar404/showcase/internal/config"
 )
 
+type HomePage struct {
+  userName string
+  introText string
+  projectList []config.Project
+	selectedProject int
+}
+
 func NewHomePage(cfg config.Config) HomePage{
 	return HomePage{
     userName: cfg.UserName,
@@ -24,6 +31,8 @@ func (hp HomePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
         switch msg.String() {
+				case "enter":
+					return NewLoadingPage(hp.projectList[hp.selectedProject]), nil
         case "ctrl+c", "q":
 					return hp, tea.Quit
 
