@@ -4,18 +4,21 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/ssh"
 	"github.com/e-mar404/showcase/internal/config"
 )
 
 type HomePage struct {
+	session ssh.Session
   userName string
   introText string
   projectList []config.Project
 	selectedProject int
 }
 
-func NewHomePage(cfg config.Config) HomePage{
+func NewHomePage(cfg config.Config, s ssh.Session) HomePage{
 	return HomePage{
+		session: s,
     userName: cfg.UserName,
     introText: cfg.IntroText,
     projectList: cfg.ProjectList,
@@ -32,7 +35,7 @@ func (hp HomePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     case tea.KeyMsg:
         switch msg.String() {
 				case "enter":
-					return NewLoadingPage(hp.projectList[hp.selectedProject]), nil
+					return NewProjectPage(hp.projectList[hp.selectedProject], hp.session), nil
         case "ctrl+c", "q":
 					return hp, tea.Quit
 
