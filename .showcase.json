@@ -8,15 +8,11 @@
     },
     {
       "name": "Gator",
-      "url": "https://github.com/e-mar404/blog-aggrtegator"
+      "url": "https://github.com/e-mar404/blog-aggregator"
     },
     {
       "name": "Chirpy Api",
       "url": "https://github.com/e-mar404/http-server"
-    },
-    {
-      "name": "fail",
-      "url": "https://github.com/e-mar404/doesnt-exist"
     }
   ]
 }

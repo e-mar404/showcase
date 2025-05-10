@@ -2,63 +2,115 @@ package pages
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/ssh"
+	"github.com/charmbracelet/log"
 	"github.com/e-mar404/showcase/internal/config"
 )
 
-type HomePage struct {
-	session ssh.Session
+type model struct {
+  status status
   userName string
   introText string
   projectList []config.Project
 	selectedProject int
+  projectsLoaded int
+  progress progress.Model
 }
 
-func NewHomePage(cfg config.Config, s ssh.Session) HomePage{
-	return HomePage{
-		session: s,
+type loadedRepo struct {}
+type finishedDownloadingRepos struct {}
+type downloadRepos struct {}
+
+type status int
+
+const (
+  LOADING status = iota
+  FAILED
+  LOADED
+)
+
+const (
+  repoBaseDir = ".repos"
+  padding = 2
+  maxWidth = 80
+)
+
+func InitialModel(cfg config.Config) model{
+	return model{
+    status: LOADING,
     userName: cfg.UserName,
     introText: cfg.IntroText,
     projectList: cfg.ProjectList,
 		selectedProject: 0,
+    projectsLoaded: 0,
+    progress: progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C")),
 	}
 }
 
-func (hp HomePage) Init() tea.Cmd {
-    return nil
+func (m model) Init() tea.Cmd {
+  if err := os.RemoveAll(repoBaseDir); err != nil {
+    log.Errorf("Error cleaning up repo dir: %v", err)
+    return tea.Quit
+  }
+
+  return func() tea.Msg { return downloadRepos{} }
 }
 
-func (hp HomePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-				case "enter":
-					return NewProjectPage(hp.projectList[hp.selectedProject], hp.session), nil
-        case "ctrl+c", "q":
-					return hp, tea.Quit
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+  log.Info("running update")
+  switch msg := msg.(type) {
+  case downloadRepos:
+    return m, downloadRepo(m)
 
-				case "k", "up":
-					if hp.selectedProject > 0 {
-						hp.selectedProject--
-					}
-
-				case "j":
-					if hp.selectedProject < len(hp.projectList)-1 {
-						hp.selectedProject++
-					}
-        }
+  case loadedRepo:
+    m.projectsLoaded++
+    if m.projectsLoaded == len(m.projectList){
+      log.Info("finished downloading repos")
+      return m, func () tea.Msg { return finishedDownloadingRepos{} }
     }
-    return hp, nil
+    return m, downloadRepo(m)
+
+  case finishedDownloadingRepos:
+    m.status = LOADED
+
+  case tea.KeyMsg:
+    switch msg.String() {
+    case "ctrl+c", "q":
+      return m, tea.Quit
+
+    case "k", "up":
+      if m.selectedProject > 0 {
+        m.selectedProject--
+      }
+
+    case "j":
+      if m.selectedProject < len(m.projectList)-1 {
+        m.selectedProject++
+      }
+    }
+  }
+  return m, nil
 }
 
-func (hp HomePage) View() string {
-  s := fmt.Sprintf("%v's Showcase\n\n", hp.userName)
-  s += fmt.Sprintf("%v\n\n", hp.introText)
+func (m model) View() string {
+  log.Info("running view")
+  if m.status == LOADING {
+    percentDone := float64(m.projectsLoaded)/float64(len(m.projectList))
+    pad := strings.Repeat(" ", padding)
+    return pad + "setting up projects\n\n" + pad + m.progress.ViewAs(percentDone)
+  }
 
-	for i, project := range hp.projectList {
-		if hp.selectedProject == i {
+  s := fmt.Sprintf("%v's Showcase\n\n", m.userName)
+  s += fmt.Sprintf("%v\n\n", m.introText)
+
+	for i, project := range m.projectList {
+		if m.selectedProject == i {
 			s += "> "
 		} else {
 			s += "- "
@@ -70,4 +122,23 @@ func (hp HomePage) View() string {
 
   return s 
 
+}
+
+func downloadRepo(m model) tea.Cmd {
+  return func() tea.Msg {
+    log.Info("running download repo")
+    
+    project := m.projectList[m.projectsLoaded]
+    cmd := "git"
+    repoDir := filepath.Join(repoBaseDir, project.Name)
+    args := []string{"clone", project.Url, repoDir} 
+    command := exec.Command(cmd, args...)
+    _, err := command.Output()
+    if err != nil {
+      log.Errorf("Unable to get repo from url: %s, err: %v", project.Url, err)
+      return tea.Quit
+    }
+
+    return loadedRepo{}
+  }
 }

@@ -74,6 +74,6 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
     os.Exit(1)
 	}
 
-	return pages.NewHomePage(cfg, s), []tea.ProgramOption{tea.WithAltScreen()}
+	return pages.InitialModel(cfg), []tea.ProgramOption{tea.WithAltScreen()}
 }
 
