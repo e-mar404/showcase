@@ -133,7 +133,8 @@ func downloadRepo(m model) tea.Cmd {
     repoDir := filepath.Join(repoBaseDir, project.Name)
     args := []string{"clone", project.Url, repoDir} 
     command := exec.Command(cmd, args...)
-    _, err := command.Output()
+    output, err := command.Output()
+		log.Info(output)
     if err != nil {
       log.Errorf("Unable to get repo from url: %s, err: %v", project.Url, err)
       return tea.Quit
